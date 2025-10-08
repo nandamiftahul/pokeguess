@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Who's That Pokémon?</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      height: 100vh;
+      background: linear-gradient(to bottom, #e53935 50%, #ffffff 50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Title - more up and stylish */
+    h1 {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffeb3b;
+      font-size: 3.4em;
+      font-weight: bold;
+      text-shadow: 4px 4px 0 #0d47a1, 6px 6px 0 #1565c0;
+      font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+
+    .pokeball {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      border: 10px solid black;
+      border-radius: 50%;
+      background: linear-gradient(to bottom, #e53935 50%, #ffffff 50%);
+      box-shadow: 0 0 40px rgba(0,0,0,0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .center-ring {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-top: 15px solid black;
+      border-bottom: 15px solid black;
+      z-index: 1;
+    }
+
+    .center-button {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 30%, #cfd8dc 70%);
+      border: 8px solid black;
+      border-radius: 50%;
+      z-index: 2;
+    }
+
+    .pokemon-container {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 3;
+    }
+
+    .pokemon-img {
+      width: 180px;
+      height: 180px;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+      filter: brightness(10%) contrast(160%) saturate(0%);
+      transition: filter 0.8s ease;
+    }
+
+    .pokemon-img.revealed {
+      filter: brightness(110%) contrast(100%) saturate(100%);
+    }
+
+    /* Pokémon name now placed below second black line */
+    #pokemonName {
+      position: absolute;
+      top: 72%; /* Move below the bottom black stripe */
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #222;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 5px 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 4;
+    }
+
+    /* --- Controls --- */
+    .controls {
+      position: absolute;
+      bottom: -100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+    }
+
+    button {
+      height: 45px;
+      width: 140px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #ffca28;
+      color: #333;
+      font-weight: bold;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    button:hover {
+      background-color: #ffc107;
+      transform: scale(1.05);
+    }
+
+    /* countdown text inside restart button */
+    #timerInside {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1em;
+      font-weight: bold;
+      color: #333;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Who's That Pokémon?</h1>
+
+  <div class="pokeball">
+    <div class="pokemon-container" id="container" style="display:none;">
+      <img id="pokemonImage" class="pokemon-img" src="" alt="Pokemon">
+    </div>
+
+    <h2 id="pokemonName"></h2>
+
+    <div class="center-ring"></div>
+    <div class="center-button"></div>
+
+    <div class="controls">
+      <button id="startButton">Start</button>
+      <button id="revealButton" style="display:none;">Reveal</button>
+
+      <!-- Restart button with countdown inside -->
+      <button id="resetButton" style="display:none;">
+        <span id="timerInside">Restart</span>
+      </button>
+    </div>
+  </div>
+
+  <audio id="initSound" src="{{ url_for('static', filename='sounds/init.mp3') }}"></audio>
+  <audio id="answerSound"></audio>
+
+  <script>
+    const startButton = document.getElementById("startButton");
+    const revealButton = document.getElementById("revealButton");
+    const resetButton = document.getElementById("resetButton");
+    const timerInside = document.getElementById("timerInside");
+    const pokemonImg = document.getElementById("pokemonImage");
+    const pokemonName = document.getElementById("pokemonName");
+    const container = document.getElementById("container");
+    const initSound = document.getElementById("initSound");
+    const answerSound = document.getElementById("answerSound");
+
+    let currentSound = "";
+    let timerInterval = null;
+
+    async function loadRandomPokemon() {
+      const res = await fetch("/get_random_pokemon");
+      const data = await res.json();
+      pokemonImg.src = data.image;
+      pokemonName.textContent = data.name;
+      answerSound.src = data.sound;
+      pokemonName.style.display = "none";
+      pokemonImg.classList.remove("revealed");
+      container.style.display = "block";
+      currentSound = data.sound;
+    }
+
+    async function startGame() {
+      initSound.playbackRate = 1.0;
+      initSound.currentTime = 0;
+      initSound.play();
+      await loadRandomPokemon();
+      startButton.style.display = "none";
+      revealButton.style.display = "inline-block";
+      resetButton.style.display = "none";
+    }
+
+    startButton.addEventListener("click", startGame);
+
+    revealButton.addEventListener("click", () => {
+      pokemonImg.classList.add("revealed");
+      pokemonName.style.display = "block";
+      answerSound.playbackRate = 0.85;
+      answerSound.currentTime = 0;
+      answerSound.play().catch(() => console.warn("No sound for", currentSound));
+
+      // countdown inside restart button
+      let timeLeft = 5;
+      timerInside.textContent = `Restart (${timeLeft})`;
+      resetButton.style.display = "inline-block";
+      revealButton.style.display = "none";
+      resetButton.disabled = true;
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          timerInside.textContent = `Restart (${timeLeft})`;
+        } else {
+          clearInterval(timerInterval);
+          timerInside.textContent = "Restart";
+          resetButton.disabled = false;
+        }
+      }, 1000);
+    });
+
+    resetButton.addEventListener("click", async () => {
+      if (resetButton.disabled) return; // prevent click before countdown ends
+      initSound.playbackRate = 1.0;
+      initSound.currentTime = 0;
+      initSound.play();
+      await loadRandomPokemon();
+      revealButton.style.display = "inline-block";
+      resetButton.style.display = "none";
+      pokemonName.style.display = "none";
+    });
+
+    window.addEventListener("load", () => {
+      initSound.playbackRate = 1.0;
+      initSound.currentTime = 0;
+      initSound.play();
+    });
+  </script>
+</body>
+</html>
