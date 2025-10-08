@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Who's That Pokémon?</title>
   <style>
     body {
@@ -149,6 +150,62 @@
       color: #333;
       pointer-events: none;
     }
+
+    /* === Mobile phone optimization === */
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      h1 {
+        font-size: 2em;
+        top: 5px;
+        text-shadow: 2px 2px 0 #0d47a1;
+      }
+
+      .pokeball {
+        width: 280px;
+        height: 280px;
+        border-width: 6px;
+      }
+
+      .center-ring {
+        width: 140px;
+        height: 140px;
+        border-top: 10px solid black;
+        border-bottom: 10px solid black;
+      }
+
+      .center-button {
+        width: 70px;
+        height: 70px;
+        border: 6px solid black;
+      }
+
+      .pokemon-img {
+        width: 130px;
+        height: 130px;
+      }
+
+      #pokemonName {
+        top: 75%;
+        font-size: 1.1em;
+        padding: 4px 10px;
+      }
+
+      .controls {
+        bottom: -80px;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      button {
+        width: 120px;
+        height: 40px;
+        font-size: 1em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -243,7 +300,7 @@
     });
 
     resetButton.addEventListener("click", async () => {
-      if (resetButton.disabled) return; // prevent click before countdown ends
+      if (resetButton.disabled) return;
       initSound.playbackRate = 1.0;
       initSound.currentTime = 0;
       initSound.play();
